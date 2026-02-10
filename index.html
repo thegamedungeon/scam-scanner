@@ -1,45 +1,76 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crib-Sentry | The Game Dungeon</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        body {
-            background-color: #0a0a0a;
-            color: #e0e0e0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-align: center;
-            padding: 50px 20px;
+        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+        .box { 
+            border: 2px solid #007bff; 
+            padding: 20px; 
+            margin: 20px auto; 
+            max-width: 500px; 
+            background: #111;
+            border-radius: 10px;
         }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #161616;
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid #007bff; /* Blue Hoodie Blue */
-            box-shadow: 0 0 20px rgba(0, 123, 255, 0.2);
+        h1 { color: #007bff; }
+        #results { margin-top: 20px; padding: 15px; min-height: 50px; background: #222; border-radius: 5px; }
+        input { margin: 20px 0; font-size: 16px; color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h1>🛡️ Crib-Sentry</h1>
+        <p>Drop the ZIP for the "Fork Test"</p>
+        
+        <input type="file" id="picker" accept=".zip">
+        
+        <div id="results">READY FOR SCAN...</div>
+    </div>
+
+<script>
+    document.getElementById('picker').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const res = document.getElementById('results');
+        res.innerHTML = "🔍 Scanning...";
+        res.style.color = "white";
+
+        try {
+            const zip = await JSZip.loadAsync(file);
+            let hasIndex = false;
+            let redFlags = [];
+
+            for (let filename in zip.files) {
+                if (filename.toLowerCase().endsWith("index.html")) hasIndex = true;
+
+                // SKIP LIST: Don't roast the legit game files
+                if (filename.includes("/patch/") || filename.includes(".min.js") || filename.includes("bundle.js")) continue;
+
+                if (filename.endsWith(".js") || filename.endsWith(".py")) {
+                    const content = await zip.files[filename].async("string");
+                    if (content.includes("password") && content.includes(".value")) {
+                        redFlags.push(filename);
+                    }
+                }
+            }
+
+            if (redFlags.length > 0) {
+                res.innerHTML = "❌ SCAM DETECTED!<br>" + redFlags[0];
+                res.style.color = "#ff4444";
+            } else if (!hasIndex) {
+                res.innerHTML = "⚠️ NO INDEX.HTML FOUND";
+                res.style.color = "#ffbb33";
+            } else {
+                res.innerHTML = "✅ DAIMYAN-PROOF!";
+                res.style.color = "#00ff00";
+            }
+        } catch (err) {
+            res.innerHTML = "🚨 ZIP ERROR";
         }
-        h1 { color: #007bff; margin-bottom: 10px; }
-        p { color: #888; margin-bottom: 30px; }
-        input[type="file"] {
-            background: #222;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #444;
-            cursor: pointer;
-            width: 100%;
-        }
-        #results {
-            margin-top: 30px;
-            padding: 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .scam { border: 2px solid #ff4444; color: #ff4444; background: rgba(255, 68, 68, 0.1); }
-        .safe { border: 2px solid #00ff00; color: #00ff
+    });
+</script>
+</body>
+</html>
