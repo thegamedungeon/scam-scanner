@@ -1,86 +1,84 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crib-Sentry | The Game Dungeon</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <style>
-        body { background: #050505; color: #e0e0e0; font-family: sans-serif; text-align: center; padding: 40px 10px; }
-        .box { 
-            border: 2px solid #007bff; 
-            padding: 30px; 
-            margin: 0 auto; 
-            max-width: 600px; 
-            background: #111;
-            border-radius: 15px;
-            box-shadow: 0 0 15px rgba(0, 123, 255, 0.3);
-        }
-        h1 { color: #007bff; margin-bottom: 5px; }
-        p { color: #777; margin-bottom: 25px; }
-        input { margin: 20px 0; font-size: 16px; color: white; cursor: pointer; }
-        #results { 
-            margin-top: 25px; 
-            padding: 20px; 
-            border-radius: 10px; 
-            font-weight: bold; 
-            min-height: 60px;
-            border: 1px solid #333;
-            background: #0a0a0a;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
+        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 30px; }
+        .box { border: 2px solid #007bff; padding: 25px; margin: auto; max-width: 500px; background: #111; border-radius: 12px; }
+        #results { margin-top: 20px; padding: 15px; background: #222; border: 1px solid #333; min-height: 40px; }
+        input { margin: 20px 0; }
     </style>
 </head>
 <body>
-
     <div class="box">
-        <h1>🛡️ Crib-Sentry</h1>
-        <p>The Official Game Dungeon "Fork Test" Scanner</p>
-        
-        <input type="file" id="picker" accept=".zip">
-        
+        <h1 style="color:#007bff">🛡️ Crib-Sentry</h1>
+        <p style="color:#888">Daimyan-Proof Scanner v1.1</p>
+        <input type="file" id="picker">
         <div id="results">READY FOR SCAN...</div>
     </div>
 
 <script>
-    document.getElementById('picker').addEventListener('change', async (e) => {
+    const picker = document.getElementById('picker');
+    const res = document.getElementById('results');
+
+    picker.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const res = document.getElementById('results');
-        res.innerHTML = "🔍 Scanning The Crib...";
+        res.innerHTML = "🔍 LOADING ZIP...";
         res.style.color = "#007bff";
 
         try {
+            // Load the ZIP
             const zip = await JSZip.loadAsync(file);
             let hasIndex = false;
             let redFlags = [];
 
-            for (let filename in zip.files) {
+            res.innerHTML = "🕵️‍♂️ SCANNING FILES...";
+
+            // Get all filenames first
+            const fileList = Object.keys(zip.files);
+            
+            for (let filename of fileList) {
                 const nameLower = filename.toLowerCase();
-                
+
                 // 1. Check for Index
                 if (nameLower.endsWith("index.html")) hasIndex = true;
 
-                // 2. THE WHITELIST: Skip files we know are safe but "wordy"
-                if (
-                    nameLower.includes("basketrandom-main/scripts/main.js") || 
-                    nameLower.includes("/patch/") || 
-                    nameLower.includes(".min.js") || 
-                    nameLower.includes("bundle.js") ||
-                    nameLower.includes("unityloader")
-                ) {
-                    continue; 
+                // 2. THE BIG SKIP (Skip folders/libs that trip us up)
+                if (nameLower.includes("patch") || nameLower.includes(".min.js") || nameLower.includes("bundle") || nameLower.includes("unity")) {
+                    continue;
                 }
 
-                // 3. SCAN SCRIPTS
-                if (nameLower.endsWith(".js") || nameLower.endsWith(".py")) {
+                // 3. Scan JS Files
+                if (nameLower.endsWith(".js")) {
                     const content = await zip.files[filename].async("string");
-                    
-                    // Logic: Only a scam if it has password + value + tries to send it (http/fetch)
-                    const isLogger = content.includes("password") && 
-                                     content.includes(".value") && 
-                                     (content.includes("http") || content.includes("fetch"));
+                    // Tightened logic to prevent false alarms
+                    if (content.includes("password") && content.includes(".value") && content.includes("fetch")) {
+                        redFlags.push(filename);
+                    }
+                }
+            }
 
-                    if (
+            // RESULTS
+            if (redFlags.length > 0) {
+                res.innerHTML = "❌ SCAM DETECTED!<br>Check: " + redFlags[0];
+                res.style.color = "#ff4444";
+            } else if (!hasIndex) {
+                res.innerHTML = "⚠️ NO INDEX.HTML FOUND";
+                res.style.color = "#ffbb33";
+            } else {
+                res.innerHTML = "✅ DAIMYAN-PROOF!";
+                res.style.color = "#00ff00";
+            }
+
+        } catch (err) {
+            console.error(err);
+            alert("Scanner Crashed: " + err.message);
+            res.innerHTML = "🚨 ERROR: " + err.message;
+        }
+    };
+</script>
+</body>
+</html>
