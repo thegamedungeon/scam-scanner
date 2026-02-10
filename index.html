@@ -22,18 +22,23 @@
             resultsDiv.innerHTML = "Scanning...";
 
             for (let filename in zip.files) {
-                // 1. Check for Index
-                if (filename.endsWith("index.html")) hasIndex = true;
+    // 1. Check for Index (Keep this)
+    if (filename.endsWith("index.html")) hasIndex = true;
 
-                // 2. Scan code for loggers
-                if (filename.endsWith(".js") || filename.endsWith(".py")) {
-                    const content = await zip.files[filename].async("string");
-                    if (content.includes("password") || content.includes(".encode") || content.includes("login")) {
-                        redFlags.push(filename);
-                    }
-                }
-            }
+    // 2. THE FIX: Only scan JS and Python, but be SMARTER
+    if (filename.endsWith(".js") || filename.endsWith(".py")) {
+        const content = await zip.files[filename].async("string");
 
+        // We only flag if it looks like a REAL logger (Password + Input + Value)
+        // This stops Basket Random from failing just for having a 'name' input.
+        const isLogger = content.includes("password") && content.includes(".value") && content.includes("input");
+        const isSuspiciousEncode = content.includes(".encode") && content.includes("fetch");
+
+        if (isLogger || isSuspiciousEncode) {
+            redFlags.push(filename);
+        }
+    }
+}
             if (!hasIndex) {
                 resultsDiv.innerHTML = "🚨 NO INDEX.HTML! This repo is a ghost town.";
             } else if (redFlags.length > 0) {
