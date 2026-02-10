@@ -22,19 +22,34 @@
             resultsDiv.innerHTML = "Scanning...";
 
             for (let filename in zip.files) {
-    // 1. Check for Index (Keep this)
+    for (let filename in zip.files) {
+    // 1. Check for Index (anywhere in the repo)
     if (filename.endsWith("index.html")) hasIndex = true;
 
-    // 2. THE FIX: Only scan JS and Python, but be SMARTER
+    // 2. THE ULTIMATE SKIP LIST
+    // This stops the scanner from roasting legit game engines and libraries
+    if (
+        filename.includes("/patch/") || 
+        filename.includes("/Build/") || 
+        filename.includes(".min.js") || 
+        filename.includes("jquery") ||
+        filename.includes("bundle.js") // Polytrack uses bundles, skip those too
+    ) {
+        continue; 
+    }
+
+    // 3. ONLY SCAN THE CORE GAME LOGIC
     if (filename.endsWith(".js") || filename.endsWith(".py")) {
         const content = await zip.files[filename].async("string");
 
-        // We only flag if it looks like a REAL logger (Password + Input + Value)
-        // This stops Basket Random from failing just for having a 'name' input.
+        // The "Real Hacker" Signature
+        // Only flags if it's looking for a password AND trying to steal the value
         const isLogger = content.includes("password") && content.includes(".value") && content.includes("input");
-        const isSuspiciousEncode = content.includes(".encode") && content.includes("fetch");
+        
+        // Only flags encoding if it's being sent off-site
+        const isSuspicious = content.includes(".encode") && (content.includes("fetch") || content.includes("XMLHttpRequest"));
 
-        if (isLogger || isSuspiciousEncode) {
+        if (isLogger || isSuspicious) {
             redFlags.push(filename);
         }
     }
