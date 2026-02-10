@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crib-Sentry | Scam Scanner</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body style="background: #1a1a1a; color: white; font-family: sans-serif; text-align: center;">
+    <h1>🛡️ Crib-Sentry</h1>
+    <p>Drop a GitHub Zip here to see if it's Daimyan-Proof.</p>
+    
+    <input type="file" id="fileInput" style="margin: 20px; padding: 10px; background: #333; color: white; border-radius: 5px;">
+    <div id="results" style="margin-top: 20px; font-weight: bold;"></div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            const zip = await JSZip.loadAsync(file);
+            let hasIndex = false;
+            let redFlags = [];
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = "Scanning...";
+
+            for (let filename in zip.files) {
+                // 1. Check for Index
+                if (filename.endsWith("index.html")) hasIndex = true;
+
+                // 2. Scan code for loggers
+                if (filename.endsWith(".js") || filename.endsWith(".py")) {
+                    const content = await zip.files[filename].async("string");
+                    if (content.includes("password") || content.includes(".encode") || content.includes("login")) {
+                        redFlags.push(filename);
+                    }
+                }
+            }
+
+            if (!hasIndex) {
+                resultsDiv.innerHTML = "🚨 NO INDEX.HTML! This repo is a ghost town.";
+            } else if (redFlags.length > 0) {
+                resultsDiv.innerHTML = "❌ SCAM DETECTED! Red flags in: " + redFlags.join(", ");
+            } else {
+                resultsDiv.innerHTML = "✅ DAIMYAN-PROOF! This repo is clean for The Crib.";
+            }
+        });
+    </script>
+</body>
+</html>
