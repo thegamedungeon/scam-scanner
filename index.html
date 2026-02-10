@@ -1,67 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Crib-Sentry | Scam Scanner</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crib-Sentry | The Game Dungeon</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-</head>
-<body style="background: #1a1a1a; color: white; font-family: sans-serif; text-align: center;">
-    <h1>🛡️ Crib-Sentry</h1>
-    <p>Drop a GitHub Zip here to see if it's Daimyan-Proof.</p>
-    
-    <input type="file" id="fileInput" style="margin: 20px; padding: 10px; background: #333; color: white; border-radius: 5px;">
-    <div id="results" style="margin-top: 20px; font-weight: bold;"></div>
-
-    <script>
-        document.getElementById('fileInput').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            const zip = await JSZip.loadAsync(file);
-            let hasIndex = false;
-            let redFlags = [];
-
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = "Scanning...";
-
-            for (let filename in zip.files) {
-    for (let filename in zip.files) {
-    // 1. Check for Index (anywhere in the repo)
-    if (filename.endsWith("index.html")) hasIndex = true;
-
-    // 2. THE ULTIMATE SKIP LIST
-    // This stops the scanner from roasting legit game engines and libraries
-    if (
-        filename.includes("/patch/") || 
-        filename.includes("/Build/") || 
-        filename.includes(".min.js") || 
-        filename.includes("jquery") ||
-        filename.includes("bundle.js") // Polytrack uses bundles, skip those too
-    ) {
-        continue; 
-    }
-
-    // 3. ONLY SCAN THE CORE GAME LOGIC
-    if (filename.endsWith(".js") || filename.endsWith(".py")) {
-        const content = await zip.files[filename].async("string");
-
-        // The "Real Hacker" Signature
-        // Only flags if it's looking for a password AND trying to steal the value
-        const isLogger = content.includes("password") && content.includes(".value") && content.includes("input");
-        
-        // Only flags encoding if it's being sent off-site
-        const isSuspicious = content.includes(".encode") && (content.includes("fetch") || content.includes("XMLHttpRequest"));
-
-        if (isLogger || isSuspicious) {
-            redFlags.push(filename);
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 50px 20px;
         }
-    }
-}
-            if (!hasIndex) {
-                resultsDiv.innerHTML = "🚨 NO INDEX.HTML! This repo is a ghost town.";
-            } else if (redFlags.length > 0) {
-                resultsDiv.innerHTML = "❌ SCAM DETECTED! Red flags in: " + redFlags.join(", ");
-            } else {
-                resultsDiv.innerHTML = "✅ DAIMYAN-PROOF! This repo is clean for The Crib.";
-            }
-        });
-    </script>
-</body>
-</html>
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #161616;
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #007bff; /* Blue Hoodie Blue */
+            box-shadow: 0 0 20px rgba(0, 123, 255, 0.2);
+        }
+        h1 { color: #007bff; margin-bottom: 10px; }
+        p { color: #888; margin-bottom: 30px; }
+        input[type="file"] {
+            background: #222;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            cursor: pointer;
+            width: 100%;
+        }
+        #results {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .scam { border: 2px solid #ff4444; color: #ff4444; background: rgba(255, 68, 68, 0.1); }
+        .safe { border: 2px solid #00ff00; color: #00ff
